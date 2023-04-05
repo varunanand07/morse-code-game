@@ -12,8 +12,8 @@
 .equ DFLT_STATE_STRT, 1             @ Specify the value to start flashing
 .equ DFLT_STATE_STOP, 0             @ Specify the value to stop flashing
 .equ DFLT_ALARM_TIME, 1000000       @ Specify the default alarm timeout
-.equ GPIO_BTN_MSK, 0x00400000       @ Bit-22 for falling-edge event on GP21
-.equ GPIO_BTN, 21                   @ Specify pin for push-button for the game
+.equ GPIO_BTN_EN_MSK, 0x00400000    @ Bit-22 for falling-edge event on GP21
+.equ GPIO_BTN_EN, 21                @ Specify pin for push-button for the game
 .equ GPIO_DIR_IN, 0                 @ Specify input direction for a GPIO pin
 .equ GPIO_ISR_OFFSET, 0x74          @ GPIO is int #13 (vector table entry 29)
 .equ ALARM_ISR_OFFSET, 0x40         @ ALARM0 is int #0 (vector table entry 16)
@@ -43,12 +43,12 @@ loop:
 @ Subroutine used to intialise the PI Pico built-in button GP21
 init_gpio_btn:
     push    {lr}
-    movs    r0, #GPIO_BTN
+    movs    r0, #GPIO_BTN_EN
     bl      asm_gpio_init
-    movs    r0, #GPIO_BTN
+    movs    r0, #GPIO_BTN_EN
     movs    r1, #GPIO_DIR_IN
     bl      asm_gpio_set_dir
-    movs    r0, #GPIO_BTN_MSK
+    movs    r0, #GPIO_BTN_EN_MSK
     bl      asm_gpio_set_irq
     pop     {pc}
 
@@ -164,5 +164,7 @@ alarm_isr:
     @ this contains the shared data for flashing state and interval value in this data segment
     lstate: .word DFLT_STATE_STRT   @ start flashing state of the LED, this is declared as a constant 
     ltimer: .word DFLT_ALARM_TIME   @ start interval value, this is declared as a constant
+    
+
     
 
