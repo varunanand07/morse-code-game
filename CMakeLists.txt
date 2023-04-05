@@ -5,7 +5,7 @@ add_executable(assign02)
 target_sources(assign02 PRIVATE assign02.c assign02.S)
 
 # Generate the PIO header file from the PIO source file.
-pico_generate_pio_header(assign02 ${CMAKE_CURRENT_LIST_DIR} assign02.pio)
+pico_generate_pio_header(assign02 ${CMAKE_CURRENT_LIST_DIR}/assign02.pio)
 
 
 # Pull in commonly used features.
