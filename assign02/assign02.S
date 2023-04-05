@@ -22,9 +22,9 @@
 
 @ Entry point to the ASM portion of the program
 main_asm:
-    bl      init_gpio_btn        @ Initialise GP21 push-button
-    bl      install_gpio_isr     @ Install the GPIO interrupt service routine
-    bl      install_alarm_isr    @ Install the ALARM interrupt service routine
+    bl      init_gpio_btn_gp21              @ Initialise GP21 push-button
+    bl      install_gpio_isr                @ Install the GPIO interrupt service routine
+    bl      install_alarm_isr               @ Install the ALARM interrupt service routine
     @ Set first alarm
     ldr     r4, =ltimer                     @ load address of the global variable for the timer
     ldr     r4, [r4]                        @ loads the value contained in the global variable into r4
@@ -41,16 +41,16 @@ loop:
     b       loop                 @ Infinite loop
 
 @ Subroutine used to intialise the PI Pico built-in button GP21
-init_gpio_btn:
-    push    {lr}
-    movs    r0, #GPIO_BTN_EN
-    bl      asm_gpio_init
-    movs    r0, #GPIO_BTN_EN
-    movs    r1, #GPIO_DIR_IN
-    bl      asm_gpio_set_dir
-    movs    r0, #GPIO_BTN_EN_MSK
-    bl      asm_gpio_set_irq
-    pop     {pc}
+init_gpio_btn_gp21:
+    push    {lr}                @ push the link register, to save the return address
+    movs    r0, #GPIO_BTN_EN    @ This is the value of the GPIO button on the PI PICO board
+    bl      asm_gpio_init       @ Call the subroutine to initialise the GPIO button specified by r0
+    movs    r0, #GPIO_BTN_EN    @ This is the value of the GPIO button on the PI PICO board
+    movs    r1, #GPIO_DIR_IN    @ We want this GPIO button to be setup as an input
+    bl      asm_gpio_set_dir    @ Call the subroutine to set the GPIO button specified by r0 to state specified by r1
+    movs    r0, #GPIO_BTN_EN    @ This is the value of the GPIO button on the PI PICO board
+    bl      asm_gpio_set_irq    @ Enables falling-edge interrupt
+    pop     {pc}                @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
 
 @ Subroutine used to install the GPIO interrupt service handler
 install_gpio_isr:
@@ -100,7 +100,7 @@ gpio_isr:
 button_gp21:
     ldr     r2, =(IO_BANK0_BASE + IO_BANK0_PROC0_INTS2_OFFSET)         @ loads the address for GPIO and the offset address for the GPIO interrupt status #2 register into r2
     ldr     r1, [r2]                                                   @ loads the value in address r2 into r1
-    ldr     r2, =#GPIO_BTN_MSK                                         @ loads bit-22 for falling-edge event on GP21 into r2                                
+    ldr     r2, =#GPIO_BTN_EN_MSK                                         @ loads bit-22 for falling-edge event on GP21 into r2                                
     cmp     r1, r2                                                     @ checks if the GP21 button has been pressed
     beq     check_button_state                                         @ branch to the subroutine to check the flashing state for GP21
 check_button_state:
@@ -125,7 +125,7 @@ clear_gp21:
     ldr     r2, =#IO_BANK0_BASE                                        @ loads the base address for GPIO into r2
     ldr     r3, =#IO_BANK0_INTR2_OFFSET                                @ loads the offset address for the GPIO raw interrupts #2 register into r3
     add     r2, r3                                                     @ adds the base address in r2 and offset address in r3 and stores the result in r2
-    ldr     r1, =#GPIO_BTN_MSK                                         @ loads bit-22 for falling-edge event on GP21 into r1
+    ldr     r1, =#GPIO_BTN_EN_MSK                                      @ loads bit-22 for falling-edge event on GP21 into r1
     str     r1, [r2]                                                   @ writes the specified bit value in r1 back to the address in r2
     b       end_gpio                                                   @ jumps to the end of gpio_isr 
 end_gpio:
