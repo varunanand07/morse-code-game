@@ -60,7 +60,7 @@ void welcome_message_banner() {
   printf("3. Otherwise you lose a life. The LED will show you how many lives you have.\n");
   printf("4. If you do not enter a character for a period of 9 seconds, the game will reset.\n");
   printf("5. If you end up with zero lives, you lose.\n");
-  printf("\nCHOOSE A LEVEL FROM THE ONES SHOWN ABOVE: \n");
+  printf("\nCHOOSE A LEVEL FROM THE ONES SHOWN ABOVE: ");
 }
 
 /*
