@@ -13,6 +13,21 @@
 // Must declare the main assembly entry point before use.
 void main_asm();
 
+// Initialise a GPIO pin – see SDK for detail on gpio_init()
+void asm_gpio_init(uint pin) {
+    gpio_init(pin);
+}
+
+// Set direction of a GPIO pin – see SDK for detail on gpio_set_dir()
+void asm_gpio_set_dir(uint pin, bool out) {
+    gpio_set_dir(pin, out);
+}
+
+// Enable falling-edge interrupt – see SDK for detail on gpio_set_irq_enabled()
+void asm_gpio_set_irq(uint pin) {
+    gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_FALL, true);
+}
+
 /*
  * Main entry point for the code - simply calls the main assembly function.
  */
