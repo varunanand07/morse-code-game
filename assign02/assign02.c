@@ -28,6 +28,41 @@ void asm_gpio_set_irq(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_FALL, true);
 }
 
+void welcome_message_banner() {
+  printf("\n+--------------------------------------------------------+\n");
+  printf("|              ASSIGNMENT #02      Group 11              |\n");
+  printf("+--------------------------------------------------------+\n");
+  printf("|    +       +  +------+  +------+   +----+  +------+    |\n");
+  printf("|    | \\   / |  |      |  |       +  |       |           |\n");
+  printf("|    |   +   |  |      |  |------+   +----+  |----+      |\n");
+  printf("|    |       |  |      |  |     \\         |  |           |\n");
+  printf("|    +       +  +------+  +      +   +----+  +------+    |\n");
+  printf("|                                                        |\n");
+  printf("|         +------+  +------+  +----+    +------+         |\n");
+  printf("|         |         |      |  |     \\   |                |\n");
+  printf("|         |         |      |  |      +  |----+           |\n");
+  printf("|         |         |      |  |     /   |                |\n");
+  printf("|         +------+  +------+  +----+    +------+         |\n");
+  printf("|                                                        |\n");
+  printf("|          +------+    ^    +       +  +------+          |\n");
+  printf("|          |         /   \\  | \\   / |  |                 |\n");
+  printf("|          |   +--|  |---|  |   +   |  |----+            |\n");
+  printf("|          |      |  |   |  |       |  |                 |\n");;
+  printf("|          +------+  +   +  +       +  +------+          |\n");
+  printf("+--------------------------------------------------------+\n");
+  printf("|       TO BEGIN, PRESS ON GP21 TO ENTER SEQUENCE        |\n");
+  printf("|         \".----\" - LEVEL 01 - CHARACTERS (EASY)         |\n");
+  printf("|         \"..---\" - LEVEL 02 - CHARACTERS (HARD)         |\n");
+  printf("+--------------------------------------------------------+\n");
+  printf("Rules:\n");
+  printf("1. Enter the character displayed in morse code.\n");
+  printf("2. If you get the character correct you win a life (max number of lives: 3).\n");
+  printf("3. Otherwise you lose a life. The LED will show you how many lives you have.\n");
+  printf("4. If you do not enter a character for a period of 9 seconds, the game will reset.\n");
+  printf("5. If you end up with zero lives, you lose.\n");
+  printf("\nCHOOSE A LEVEL FROM THE ONES SHOWN ABOVE: \n");
+}
+
 /*
  * Main entry point for the code - simply calls the main assembly function.
  */
