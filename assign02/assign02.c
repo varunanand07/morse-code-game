@@ -28,6 +28,29 @@ void asm_gpio_set_irq(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_FALL, true);
 }
 
+// Global variables
+char buffer[5];
+char check[5];
+
+// Character array for the alphanumeric digits & letters
+char char_array[] = {
+    // Alphanumeric digits 0 - 9
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+    // Alphanumeric letters A - Z
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+
+// Character array for the morse code digits & letters
+char morse_table[36][5] = { 
+    // Morse code for the digits 0-9
+    "-----", ".----", "..---", "...--", "....-", ".....",
+    "-....", "--...", "---..", "----.", 
+    // Morse code for the letters A - Z
+    ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....",
+    "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.",
+    "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-",
+    "-.--", "--..",
+};
+
 void welcome_message_banner() {
   printf("\n+--------------------------------------------------------+\n");
   printf("|              ASSIGNMENT #02      Group 11              |\n");
