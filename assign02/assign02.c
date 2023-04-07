@@ -16,7 +16,7 @@ int j = 0;
 int level = 0;
 int lives = 3;
 int wins = 0;
-int select = 2;
+int sel = 2;
 
 // Must declare the main assembly entry point before use.
 void main_asm();
@@ -179,21 +179,21 @@ bool playerLosesGame() {
 
 void addSymbolToAnswer() {
     // if player entered "."
-    if(select == 0) {
+    if(sel == 0) {
         printf(".");
         buffer[j++] = '.';
         watchdog_update();
-        select = 2;
+        sel = 2;
     }
     // if player entered "-"
-    else if(select == 1) {
+    else if(sel == 1) {
         printf("-");
         buffer[j++] = '-';
         watchdog_update();
-        select = 2;
+        sel = 2;
     }
     // if no input was given during an active game (not during the level decision)
-    else if(level != 0 && select == 2) {
+    else if(level != 0 && sel == 2) {
         printf(" ");
         buffer[5] = 1;
     }         
@@ -283,7 +283,7 @@ void printPlayerInput() {
 void linkMorseToCorrespondingCharacter() {
     for(int index = 0; index < 37; index++) {
         if (strcmp(buffer, morseCodeCharacters[index]) == 0) {
-                printf("This corresponds to \"%c\".\n", char_array[index]);
+                printf("This corresponds to \"%c\".\n", alphanumericCharacters[index]);
                 return;
             }
         }
@@ -293,8 +293,8 @@ void linkMorseToCorrespondingCharacter() {
 void level01() {
     watchdog_update();
     int currentCharacter = rand() % 36; // gens random number in index to test
-    printf("Enter the following character in Morse code: %c\n", char_array[currentCharacter]);
-    printf("Morse code for character \"%c\": ", char_array[currentCharacter]);
+    printf("Enter the following character in Morse code: %c\n", alphanumericCharacters[currentCharacter]);
+    printf("Morse code for character \"%c\": ", alphanumericCharacters[currentCharacter]);
     for(int i = 0; i < 5; i++) {
         printf("%c", morseCodeCharacters[currentCharacter][i]);
     }
@@ -305,13 +305,13 @@ void level01() {
 void level02() {
     watchdog_update();
     int currentCharacter = rand() % 36; // gens random number in index to test
-    printf("Enter the following character in Morse code: %c\n", char_array[currentCharacter]);
+    printf("Enter the following character in Morse code: %c\n", alphanumericCharacters[currentCharacter]);
     j = 0;
 }
 
 void Gameflow(int symbol) {
     if (lives != 0) {
-        select = symbol;
+        sel = symbol;
         addSymbolToAnswer();
         if (level != 0) {
             printPlayerInput();
