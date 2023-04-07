@@ -93,7 +93,8 @@ gpio_isr:
     @ Button has been pressed
     ldr     r2, =(IO_BANK0_BASE + IO_BANK0_PROC0_INTS2_OFFSET)         @ loads the address for GPIO and the offset address for the GPIO interrupt status #2 register into r2
     ldr     r1, [r2]                                                   @ loads the value in address r2 into r1
-    ldr     r2, =#GPIO_BTN_FALL_MSK                                    @ loads bit-22 for falling-edge event on GP21 into r2                                
+    ldr     r2, =#GPIO_BTN_FALL_MSK                                    @ loads bit-22 for falling-edge event on GP21 into r2    
+    ands    r1, r2                            
     cmp     r1, r2                                                     @ checks if the GP21 button has been pressed
     beq     start_timer                                                @ branch to the subroutine to check the flashing state for GP21
     @ Button has been released - we need to know how long it has been pressed for morse code & length between presses to know which morse code pattern to input
@@ -145,7 +146,7 @@ clear_button_release:
     ldr     r1, =#GPIO_BTN_RISE_MSK                                    @ loads the bit for the rising-edge event on GP21
     b       end_gpio                                                   @ branch to clear interrupt for rising-edge event on GP21
 clear_button_press:
-    movs    r6, #0                                                     @ no longer looking at falling-edge so set to one so we can focus on the rising-edge cases
+    movs    r7, #0                                                     @ no longer looking at falling-edge so set to one so we can focus on the rising-edge cases
     ldr     r1, =#GPIO_BTN_FALL_MSK                                    @ loads bit for rising-edge event on GP21 into r1
     b       end_gpio                                                   @ loads bit-22 for falling-edge event on GP21 into r1
 end_gpio:
@@ -176,4 +177,3 @@ alarm_isr:
 .data
     @ Set data alignment
     .align 4
-    
