@@ -11,6 +11,12 @@
 #define WS2812_PIN 28       // The GPIO pin that the WS2812 connected to
 
 int rgbColour = 4; // colour for RGB LED
+char buffer[5];
+int j = 0;
+int level = 0;
+int lives = 3;
+int wins = 0;
+int select = 2;
 
 // Must declare the main assembly entry point before use.
 void main_asm();
@@ -108,7 +114,7 @@ char alphanumericCharacters[] = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
 // Character array for the morse code digits & letters
-char MorseCodeCharacters[36][5] = { 
+char morseCodeCharacters[36][5] = { 
     // Morse code for the letters A - Z
     ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....",
     "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.",
@@ -151,6 +157,187 @@ void welcome_message_banner() {
   printf("4. If you do not enter a character for a period of 9 seconds, the game will reset.\n");
   printf("5. If you end up with zero lives, you lose.\n");
   printf("\nCHOOSE A LEVEL FROM THE ONES SHOWN ABOVE: ");
+}
+
+void resetValues() {
+    lives = 3;
+    level = 0;
+    wins = 0;
+}
+
+bool playerWinsGame() {
+    if (wins == 10) {
+        printf("Woo hoo! You win!\n");
+        resetValues();
+        return true;
+    }
+    else
+        return false;
+}
+
+bool playerLosesGame() {
+    if (lives == 0) {
+        printf("Game over... You lose...\n");
+        resetValues();
+        return true;
+    }
+    else
+        return false;
+}
+
+void addSymbolToAnswer() {
+    // if player entered "."
+    if(select == 0) {
+        printf(".");
+        buffer[j++] = '.';
+        watchdog_update();
+        select = 2;
+    }
+    // if player entered "-"
+    else if(select == 1) {
+        printf("-");
+        buffer[j++] = '-';
+        watchdog_update();
+        select = 2;
+    }
+    // if no input was given during an active game (not during the level decision)
+    else if(level != 0 && select == 2) {
+        printf(" ");
+        buffer[5] = 1;
+    }         
+}
+
+bool checkForWinOrLossInCurrentRound() {
+    for (int row = 0; row < 37; row++) {
+        if (strcmp(buffer, morseCodeCharacters[row]) == 0)
+            return true;
+    }
+    return false;
+}
+
+void loseLife() {
+    if (lives != 0)
+        lives--;
+    printf("You have %d lives left.", lives);
+}
+
+void winLife() {
+    if (lives != 3)
+        lives++;
+    printf("You have %d lives left.", lives);
+}
+
+void resetAnswer() {
+    for (int index = 0; index < 6; index++)
+        buffer[index] = 0;
+    j = 0;
+    clear_buffer();
+}
+
+void updateNumberOfWins() {
+    wins++;
+    if (wins == 5) {
+        printf("Congratulations! You passed to level 02.\n");
+        printf("In level 02, you will not be shown the Morse codes of characters.\n");
+        level++;
+    }
+}
+
+void handleWinInCurrentRound() {
+    printf("Player entered the correct answer!\n");
+    winLife();
+    updateNumberOfWins();
+    resetAnswer();
+    update_led();
+}
+
+void handleLoseInCurrentRound() {
+    if (buffer[0] != 0)
+        printf("Player entered the wrong answer...\n");
+    else
+        printf("Player didn't enter an answer...\n");
+    loseLife();
+    resetAnswer();
+    update_led();
+}
+
+int initialLevelSelection() {
+    if (strcmp(buffer, ".----") == 0) {
+        watchdog_update();
+        printf("You chose level 01.\n");
+        update_led();
+        clear_buffer();
+        return 1;
+    }
+    if (strcmp(buffer, "..---") == 0) {
+        watchdog_update();
+        printf("You chose level 02.\n");
+        clear_buffer();
+        update_led();
+        return 2;
+    }
+    return 0;
+}
+
+void printPlayerInput() {
+    printf("Your input was: ");
+    for(int index = 0; index < 5; index++) {
+        printf("%c", buffer[index]);
+    }
+    printf("\n");
+}
+
+
+void linkMorseToCorrespondingCharacter() {
+    for(int index = 0; index < 37; index++) {
+        if (strcmp(buffer, morseCodeCharacters[index]) == 0) {
+                printf("This corresponds to \"%c\".\n", char_array[index]);
+                return;
+            }
+        }
+        printf("This corresponds to \"?\".\n");
+}
+
+void level01() {
+    watchdog_update();
+    int currentCharacter = rand() % 36; // gens random number in index to test
+    printf("Enter the following character in Morse code: %c\n", char_array[currentCharacter]);
+    printf("Morse code for character \"%c\": ", char_array[currentCharacter]);
+    for(int i = 0; i < 5; i++) {
+        printf("%c", morseCodeCharacters[currentCharacter][i]);
+    }
+    printf("\n");
+    j = 0;
+}
+
+void level02() {
+    watchdog_update();
+    int currentCharacter = rand() % 36; // gens random number in index to test
+    printf("Enter the following character in Morse code: %c\n", char_array[currentCharacter]);
+    j = 0;
+}
+
+void Gameflow(int symbol) {
+    if (lives != 0) {
+        select = symbol;
+        addSymbolToAnswer();
+        if (level != 0) {
+            printPlayerInput();
+            linkMorseToCorrespondingCharacter();
+            if (checkForWinOrLossInCurrentRound())
+                handleWinInCurrentRound();
+            else
+                handleLoseInCurrentRound();
+            if (!playerWinsGame() && !playerLosesGame()) {
+                if (level == 1)
+                    level01();
+                else
+                    level02();
+            }
+        }
+        else
+            level = initialLevelSelection();
+    }
 }
 
 /*
