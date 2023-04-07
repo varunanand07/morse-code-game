@@ -41,14 +41,6 @@ void asm_gpio_set_irq_rise(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_RISE, true);
 }
 
-void addToSequence() {
-    //TODO
-}
-
-void displaySequence() {
-    //TODO
-}
-
 /**
  * @brief Wrapper function used to call the underlying PIO
  *        function that pushes the 32-bit RGB colour value
