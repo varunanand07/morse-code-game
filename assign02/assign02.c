@@ -31,13 +31,9 @@ void asm_gpio_set_dir(uint pin, bool out) {
     gpio_set_dir(pin, out);
 }
 
-// Enable falling-edge interrupt – see SDK for detail on gpio_set_irq_enabled()
-void asm_gpio_set_irq_fall(uint pin) {
+// Enable falling-edge & rising-edge interrupt – see SDK for detail on gpio_set_irq_enabled()
+void asm_gpio_set_irq(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_FALL, true);
-}
-
-// Enable rising-edge interrupt – see SDK for detail on gpio_set_irq_enabled()
-void asm_gpio_set_irq_rise(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_RISE, true);
 }
 
