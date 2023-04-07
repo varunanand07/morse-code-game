@@ -116,7 +116,7 @@ input_dot:
 input_space:
     movs    r0, #32                                                    @ ASCII value for the "space" character, that we want to input into our morse code sequence
 add_reset:
-    bl      addToSequence                                              @ call c function to add the ASCII character in r0 to the morse code sequence
+    bl      addSymbolToAnswer                                          @ call c function to add the ASCII character in r0 to the morse code sequence
     bl      reset_timer                                                @ branch to subroutine to reset the timer for next press
     b       clear_button_release                                       @ branch to clear interrupt for rising-edge event on GP21
 start_timer:
@@ -160,10 +160,10 @@ alarm_isr:
     push    {lr}                            @ push the link register, to save the return address
     @ if it has been over 1 second we input a space and terminate the sequence
     movs    r0, #0                          @ ASCII value for "null" to terminate a character
-    bl      addToSequence                   @ call c function to add the ASCII character to the sequence
+    bl      addSymbolToAnswer               @ call c function to add the ASCII character to the sequence
     ldr     r7, =1                          @ restore the value of r8, to detect the falling-edge event on GP21 
     ldr     r0,=MEMORY                      @ stores the morse code sequence just terminated into the memory address for the sequence
-    bl      displaySequence                 @ call the c function to display the morse code sequence to the player
+    bl      printPlayerInput                 @ call the c function to display the morse code sequence to the player
     @ clear the ALARM interrupt 
     ldr     r2, =#TIMER_BASE                @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                    @ loads ALARM's bit-0 into r1
@@ -174,4 +174,3 @@ alarm_isr:
 .data
     @ Set data alignment
     .align 4
-    
