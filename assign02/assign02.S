@@ -111,13 +111,13 @@ morse_code_sequence:
     blt     input_space                                                @ branch to input a space character
     cmp     r0, r2                                                     @ if the button press is less than one second, then we will input a dot
     blt     input_dot                                                  @ branch to subroutine to input a dot into the morse code sequence 
-    movs    r0, #45                                                    @ ASCII value for the "dash" (aka: hyphen) character, that we want to input into our morse code sequence 
+    movs    r0, #1                                                     @ ASCII value for the "dash" (aka: hyphen) character, that we want to input into our morse code sequence 
     b       add_reset                                                  @ branch to code to add the ASCII character into the morse code sequence and reset the timer
 input_dot:
-    movs    r0, #46                                                    @ ASCII value for the "dot" character, that we want to input into our morse code sequence
+    movs    r0, #0                                                     @ ASCII value for the "dot" character, that we want to input into our morse code sequence
     b       add_reset                                                  @ branch to code to add the ASCII character into the morse code sequence and reset the timer
 input_space:
-    movs    r0, #32                                                    @ ASCII value for the "space" character, that we want to input into our morse code sequence
+    //movs    r0, #32                                                    @ ASCII value for the "space" character, that we want to input into our morse code sequence
 add_reset:
     bl      addSymbolToAnswer                                          @ call c function to add the ASCII character in r0 to the morse code sequence
     bl      reset_timer                                                @ branch to subroutine to reset the timer for next press
