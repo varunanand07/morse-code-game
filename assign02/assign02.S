@@ -28,12 +28,13 @@
 
 @ Entry point to the ASM portion of the program
 main_asm:
+    ldr     r7, =1                          @ boolean set true for first press
+    ldr     r5, =0                          @ Default value for time between presses
     bl      init_gpio_btn_gp21              @ Initialise GP21 push-button
     bl      install_gpio_isr                @ Install the GPIO interrupt service routine
     bl      install_alarm_isr               @ Install the ALARM interrupt service routine
-loop:
     @ Set alarm
-    ldr     r4, =timer                     @ load address of the global variable for the timer
+    ldr     r4, =gameTimer                  @ load address of the global variable for the "gameTimer"
     ldr     r4, [r4]                        @ loads the value contained in the global variable into r4
     ldr     r2, =#TIMER_BASE                @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                    @ bit-0 for ALARM0           
@@ -44,6 +45,7 @@ loop:
     add     r1, r4                          @ add the length of the alarm contained in r4 with the appropriate bit value of ALARM0 bit-0, which is in r1 and store the result in r1
     ldr     r3, =#TIMER_ALARM0_OFFSET       @ loads the offset address for the ALARM0 control register into r3
     str     r1, [r2, r3]                    @ write the value in r1 back to the base address that is in r2 and the offset address that is in r3
+loop:
     @ Wait for interrupt to be triggered
     wfi                                     
     b       loop                            @ Infinite loop
@@ -112,23 +114,43 @@ gpio_isr:
     cmp     r1, r2                                                     @ checks if the GP21 button has been pressed
     beq     time_between_presses                                       @ branch to the subroutine to check the flashing state for GP21
     @ Button has been released - we need to know how long it has been pressed for morse code & length between presses to know which morse code pattern to input
-    @ time between presses
-    ldr     r2, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
-    ldr     r3, =#TIMER_INTR_OFFSET                                    @ loads the offset address for the TIMER raw interrupts register into r3
-    ldr     r4, [r2, r3]                                               @ current timer after the button has been released
-    subs    r0, r4, r2                                                 @ subtract the time of press from the time of release, to find out the duration of the press
+    @ when the button was released & duration of press
+    ldr     r1, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
+    ldr     r3, =#TIMER_TIMELR_OFFSET                                  @ loads the offset address for the TIMER raw interrupts register into r3
+    ldr     r0, [r1, r3]                                               @ current timer after the button has been released
+    subs    r0, r2                                                     @ subtract the time of press from the time of release, to find out the duration of the press
     bl      morse_code_sequence                                        @ branch to code to input into morse code sequence
+    ldr     r1, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
+    ldr     r3, =#TIMER_TIMELR_OFFSET                                  @ loads the offset address for the TIMER raw interrupts register into r3
+    ldr     r4, [r1, r3]                                               @ current time used to calculate time between the presses
     b       clear_button_release                                       @ clear interrupt for rising-edge event on GP21
+reset_timer:
+    push    {lr}
+    @ Set alarm
+    ldr     r4, =gameTimer                  @ load address of the global variable for the "gameTimer"
+    ldr     r4, [r4]                        @ loads the value contained in the global variable into r4
+    ldr     r2, =#TIMER_BASE                @ loads the base address for the timer component into r2
+    ldr     r1, =#ALARM0                    @ bit-0 for ALARM0           
+    ldr     r3, =#TIMER_INTE_OFFSET         @ loads the offset address for the TIMER raw interrupt enable register into r3
+    str     r1, [r2, r3]                    @ writes the appropriate bit value back to the TIMER's offset address interrupt enable register that is in r3 and the base address that is in r2
+    ldr     r3, =#TIMER_TIMELR_OFFSET       @ loads the offset address for the lower 32-bits of the timer register into r3
+    ldr     r1, [r2, r3]                    @ loads the address of r3 and r2 into r1
+    add     r1, r4                          @ add the length of the alarm contained in r4 with the appropriate bit value of ALARM0 bit-0, which is in r1 and store the result in r1
+    ldr     r3, =#TIMER_ALARM0_OFFSET       @ loads the offset address for the ALARM0 control register into r3
+    str     r1, [r2, r3]                    @ write the value in r1 back to the base address that is in r2 and the offset address that is in r3
+    pop     {pc}
 time_between_presses:
     ldr     r2, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
-    ldr     r3, =#TIMER_INTR_OFFSET                                    @ loads the offset address for the TIMER raw interrupts register into r3
+    ldr     r3, =#TIMER_TIMELR_OFFSET                                  @ loads the offset address for the TIMER raw interrupts register into r3
     ldr     r2, [r2, r3]                                               @ current timer count when button is first pressed is now in r2
+    cmp     r7, #1                                                     @ if it is the first button press
     beq     clear_button_press                                         @ clear interrupt for falling-edge event on GP21
     subs    r5, r2, r4                                                 @ subtract the time of the last release with the current press to find out the time between presses
 clear_button_release:
     ldr     r1, =#GPIO_BTN_RISE_MSK                                    @ loads the bit for the rising-edge event on GP21
     b       end_gpio                                                   @ branch to clear interrupt for rising-edge event on GP21
 clear_button_press:
+    ldr     r7, =0                                                     @ it is no longer the first button press so set the boolean to false
     ldr     r1, =#GPIO_BTN_FALL_MSK                                    @ loads bit for rising-edge event on GP21 into r1
     b       end_gpio                                                   @ loads bit-22 for falling-edge event on GP21 into r1
     /*        INPUT TO MORSE CODE SEQUENCE - START        */ 
@@ -152,7 +174,7 @@ input_space:
     movs    r0, #CHAR_SPACE                                            @ pass in "space" parameter for the addToSequence c function
 sequence_add:
     bl      addSymbolToAnswer                                          @ call c function to add the ASCII character in r0 to the morse code sequence
-    b       clear_button_release                                       @ branch to clear interrupt for rising-edge event on GP21
+    bl      reset_timer
     pop     {pc}
     /*        INPUT TO MORSE CODE SEQUENCE - END         */ 
 end_gpio:
@@ -167,6 +189,8 @@ end_gpio:
 .thumb_func                                                            @ Required for all interrupt service routines
 alarm_isr:
     push    {lr}                                                       @ push the link register, to save the return address
+    @ reset the first button press boolean
+    ldr     r7, =1
     @ clear the ALARM interrupt 
     ldr     r2, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                                               @ loads ALARM's bit-0 into r1
@@ -178,4 +202,5 @@ alarm_isr:
 .align 4
     .data
     halfTimer: .word HALF_ALARM_TIME        @ Half the alarm time value, this is declared as a constant
-    timer: .word ALARM_TIME                 @ Alarm time value, this is declared as a constant
+    timer: .word DFLT_ALARM_TIME            @ Alarm time value, this is declared as a constant
+    gameTimer: .word ALARM_TIME             @ Alarm time value for the game, this is declared as a constant
