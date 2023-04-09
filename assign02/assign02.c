@@ -5,6 +5,7 @@
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "assign02.pio.h"
+#include "hardware/watchdog.h"
 
 #define IS_RGBW true        // Will use RGBW format
 #define NUM_PIXELS 1        // There is 1 WS2812 device in the chain
@@ -90,9 +91,9 @@ void setRgbStatus(int rgbColour) {
     }
 }
 
-// Global variables
-char buffer[5];
-char check[5];
+void watchdog_update();
+
+void watchdog_enable(uint32_t delay_ms, bool pause_on_debug);
 
 // Character array for the alphanumeric digits & letters
 char alphanumericCharacters[] = {
@@ -219,7 +220,7 @@ void resetAnswer() {
     for (int index = 0; index < 6; index++)
         buffer[index] = 0;
     j = 0;
-    clear_buffer();
+    //clear_buffer();
 }
 
 void updateNumberOfWins() {
@@ -236,7 +237,7 @@ void handleWinInCurrentRound() {
     winLife();
     updateNumberOfWins();
     resetAnswer();
-    update_led();
+    setRgbStatus(lives);
 }
 
 void handleLoseInCurrentRound() {
@@ -246,22 +247,22 @@ void handleLoseInCurrentRound() {
         printf("Player didn't enter an answer...\n");
     loseLife();
     resetAnswer();
-    update_led();
+    setRgbStatus(lives);
 }
 
 int initialLevelSelection() {
     if (strcmp(buffer, ".----") == 0) {
         watchdog_update();
         printf("You chose level 01.\n");
-        update_led();
-        clear_buffer();
+        setRgbStatus(lives);
+        //clear_buffer();
         return 1;
     }
     if (strcmp(buffer, "..---") == 0) {
         watchdog_update();
         printf("You chose level 02.\n");
-        clear_buffer();
-        update_led();
+        //clear_buffer();
+        setRgbStatus(lives);
         return 2;
     }
     return 0;

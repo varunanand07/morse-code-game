@@ -21,7 +21,7 @@
 .equ ALARM_ISR_OFFSET, 0x40          @ ALARM0 is int #0 (vector table entry 16)
 .equ ALARM0, 0x1                     @ ALARM0, bit-0
 .equ GPIO, 0x2000                    @ GPIO, bit-13
-.equ ALARM_TIME, 2500000             @ Specify the 2 seconds alarm timeout
+.equ ALARM_TIME, 2000000             @ Specify the 2 seconds alarm timeout
 .equ CHAR_DOT, 0                     @ c function addToSequence parameter value for "dot"
 .equ CHAR_DASH, 1                    @ c function addToSequence parameter value for "dash"   
 .equ CHAR_SPACE, 2                   @ c function addToSequence parameter value for "space"
@@ -105,29 +105,70 @@ install_alarm_isr:
 @ GPIO interrupt service handler routine
 .thumb_func                                                            @ Required for all interrupt service routines
 gpio_isr:
-    push    {lr}                                                       @ push the link register, to save the return address
+    push    {r0-r3, lr}                                                       @ push the link register, to save the return address
     @ Button has been pressed
     ldr     r2, =(IO_BANK0_BASE + IO_BANK0_PROC0_INTS2_OFFSET)         @ loads the address for GPIO and the offset address for the GPIO interrupt status #2 register into r2
     ldr     r1, [r2]                                                   @ loads the value in address r2 into r1
     ldr     r2, =#GPIO_BTN_FALL_MSK                                    @ loads bit-22 for falling-edge event on GP21 into r2    
     ands    r1, r2                            
     cmp     r1, r2                                                     @ checks if the GP21 button has been pressed
-    beq     time_between_presses                                       @ branch to the subroutine to check the flashing state for GP21
+    beq     button_pressed                                             @ branch to the subroutine to check the flashing state for GP21
     @ Button has been released - we need to know how long it has been pressed for morse code & length between presses to know which morse code pattern to input
     @ when the button was released & duration of press
+button_released:
     ldr     r1, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
     ldr     r3, =#TIMER_TIMELR_OFFSET                                  @ loads the offset address for the TIMER raw interrupts register into r3
     ldr     r0, [r1, r3]                                               @ current timer after the button has been released
-    subs    r0, r2                                                     @ subtract the time of press from the time of release, to find out the duration of the press
+    ldr     r1, =time
+    ldr     r1, [r1]
+    subs    r0, r0, r1                                                     @ subtract the time of press from the time of release, to find out the duration of the press
     bl      morse_code_sequence                                        @ branch to code to input into morse code sequence
-    ldr     r1, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
-    ldr     r3, =#TIMER_TIMELR_OFFSET                                  @ loads the offset address for the TIMER raw interrupts register into r3
-    ldr     r4, [r1, r3]                                               @ current time used to calculate time between the presses
     b       clear_button_release                                       @ clear interrupt for rising-edge event on GP21
+
+button_pressed:
+    ldr     r2, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
+    ldr     r3, =#TIMER_TIMELR_OFFSET                                  @ loads the offset address for the TIMER raw interrupts register into r3
+    ldr     r0, [r2, r3]
+    ldr     r1, =time
+    str     r0, [r1]
+    b       clear_button_press                                         @ clear interrupt for falling-edge event on GP21
+
+clear_button_release:
+    ldr     r1, =#GPIO_BTN_RISE_MSK                                    @ loads the bit for the rising-edge event on GP21
+    b       end_gpio                                                   @ branch to clear interrupt for rising-edge event on GP21
+
+clear_button_press:
+    ldr     r1, =#GPIO_BTN_FALL_MSK                                    @ loads bit for rising-edge event on GP21 into r1
+    b       end_gpio                                                   @ loads bit-22 for falling-edge event on GP21 into r1
+    /*        INPUT TO MORSE CODE SEQUENCE - START        */ 
+    // check if something was input before at least one second
+morse_code_sequence:
+    push    {r0, r1, lr}                                                       @ load "timer" into r3                                                  @ load the value stored at the address of "halfTimer" into r3
+    ldr     r1, =#HALF_ALARM_TIME
+    cmp     r0, r1                                                     @ if the button press is less than one second, then we will input a dot
+    blt     input_dot                                                  @ branch to subroutine to input a dot into the morse code sequence    
+    movs    r0, #CHAR_DASH                                             @ pass in "dash" parameter for the addToSequence c function
+    b       sequence_add                                               @ branch to code to add the character into the morse code sequence 
+input_dot:
+    movs    r0, #CHAR_DOT                                              @ pass in "dot" parameter for the addToSequence c function
+    b       sequence_add                                               @ branch to code to add the character into the morse code sequence 
+sequence_add:
+    bl      Gameflow                                                   @ call c function to add the ASCII character in r0 to the morse code sequence
+    bl      reset_timer
+    pop     {r0, r1, pc}
+    /*        INPUT TO MORSE CODE SEQUENCE - END         */ 
+end_gpio:
+    @ clear GP21 interrupt
+    ldr     r2, =#IO_BANK0_BASE                                        @ loads the base address for GPIO into r2
+    ldr     r3, =#IO_BANK0_INTR2_OFFSET                                @ loads the offset address for the GPIO raw interrupts #2 register into r3
+    add     r2, r3                                                     @ adds the base address in r2 and offset address in r3 and stores the result in r2
+    str     r1, [r2]                                                   @ writes the specified bit value in r1 back to the address in r2
+    pop     {r0-r3, pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
+
 reset_timer:
-    push    {lr}
+    push    {r1-r4, lr}
     @ Set alarm
-    ldr     r4, =gameTimer                  @ load address of the global variable for the "gameTimer"
+    ldr     r4, =ALARM_TIME                 @ load address of the global variable for the "gameTimer"
     ldr     r4, [r4]                        @ loads the value contained in the global variable into r4
     ldr     r2, =#TIMER_BASE                @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                    @ bit-0 for ALARM0           
@@ -138,57 +179,12 @@ reset_timer:
     add     r1, r4                          @ add the length of the alarm contained in r4 with the appropriate bit value of ALARM0 bit-0, which is in r1 and store the result in r1
     ldr     r3, =#TIMER_ALARM0_OFFSET       @ loads the offset address for the ALARM0 control register into r3
     str     r1, [r2, r3]                    @ write the value in r1 back to the base address that is in r2 and the offset address that is in r3
-    pop     {pc}
-time_between_presses:
-    ldr     r2, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
-    ldr     r3, =#TIMER_TIMELR_OFFSET                                  @ loads the offset address for the TIMER raw interrupts register into r3
-    ldr     r2, [r2, r3]                                               @ current timer count when button is first pressed is now in r2
-    cmp     r7, #1                                                     @ if it is the first button press
-    beq     clear_button_press                                         @ clear interrupt for falling-edge event on GP21
-    subs    r5, r2, r4                                                 @ subtract the time of the last release with the current press to find out the time between presses
-clear_button_release:
-    ldr     r1, =#GPIO_BTN_RISE_MSK                                    @ loads the bit for the rising-edge event on GP21
-    b       end_gpio                                                   @ branch to clear interrupt for rising-edge event on GP21
-clear_button_press:
-    ldr     r7, =0                                                     @ it is no longer the first button press so set the boolean to false
-    ldr     r1, =#GPIO_BTN_FALL_MSK                                    @ loads bit for rising-edge event on GP21 into r1
-    b       end_gpio                                                   @ loads bit-22 for falling-edge event on GP21 into r1
-    /*        INPUT TO MORSE CODE SEQUENCE - START        */ 
-    // check if something was input before at least one second
-morse_code_sequence:
-    push    {lr}
-    ldr     r3, =timer                                                 @ load "timer" into r3
-    ldr     r3, [r3]                                                   @ load the value stored at the address of timer into r3
-    cmp     r5, r3                                                     @ if the time between presses was greater than 1 second
-    bgt     input_space                                                @ branch to the code to input a "space" to the morse code sequence
-    ldr     r3, =halfTimer                                             @ load "halfTimer" into r3
-    ldr     r3, [r3]                                                   @ load the value stored at the address of "halfTimer" into r3
-    cmp     r0, r3                                                     @ if the button press is less than one second, then we will input a dot
-    blt     input_dot                                                  @ branch to subroutine to input a dot into the morse code sequence    
-    movs    r0, #CHAR_DASH                                             @ pass in "dash" parameter for the addToSequence c function
-    b       sequence_add                                               @ branch to code to add the character into the morse code sequence 
-input_dot:
-    movs    r0, #CHAR_DOT                                              @ pass in "dot" parameter for the addToSequence c function
-    b       sequence_add                                               @ branch to code to add the character into the morse code sequence 
-input_space:
-    movs    r0, #CHAR_SPACE                                            @ pass in "space" parameter for the addToSequence c function
-sequence_add:
-    bl      addSymbolToAnswer                                          @ call c function to add the ASCII character in r0 to the morse code sequence
-    bl      reset_timer
-    pop     {pc}
-    /*        INPUT TO MORSE CODE SEQUENCE - END         */ 
-end_gpio:
-    @ clear GP21 interrupt
-    ldr     r2, =#IO_BANK0_BASE                                        @ loads the base address for GPIO into r2
-    ldr     r3, =#IO_BANK0_INTR2_OFFSET                                @ loads the offset address for the GPIO raw interrupts #2 register into r3
-    add     r2, r3                                                     @ adds the base address in r2 and offset address in r3 and stores the result in r2
-    str     r1, [r2]                                                   @ writes the specified bit value in r1 back to the address in r2
-    pop     {pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
+    pop     {r1-r4, pc}
 
 @ ALARM interrupt service handler routine
 .thumb_func                                                            @ Required for all interrupt service routines
 alarm_isr:
-    push    {lr}                                                       @ push the link register, to save the return address
+    push    {r0-r4, r7, lr}                                                       @ push the link register, to save the return address
     @ reset the first button press boolean
     ldr     r7, =1
     @ clear the ALARM interrupt 
@@ -196,7 +192,9 @@ alarm_isr:
     ldr     r1, =#ALARM0                                               @ loads ALARM's bit-0 into r1
     ldr     r3, =#TIMER_INTR_OFFSET                                    @ loads the offset address for the TIMER raw interrupts register into r3
     str     r1, [r2, r3]                                               @ writes the appropriate bit value back to the TIMER's offset address interrupt reset register that is in r3 and the base address that is in r2
-    pop     {pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
+    ldr     r0, =2
+    bl      Gameflow
+    pop     {r0-r4, r7, pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
 
 @ Set data alignment
 .align 4
@@ -204,3 +202,4 @@ alarm_isr:
     halfTimer: .word HALF_ALARM_TIME        @ Half the alarm time value, this is declared as a constant
     timer: .word DFLT_ALARM_TIME            @ Alarm time value, this is declared as a constant
     gameTimer: .word ALARM_TIME             @ Alarm time value for the game, this is declared as a constant
+    time: .word 0
