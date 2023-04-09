@@ -169,7 +169,6 @@ reset_timer:
     push    {lr}
     @ Set alarm
     ldr     r4, =gameTimer                  @ load address of the global variable for the "gameTimer"
-    ldr     r4, [r4]                        @ loads the value contained in the global variable into r4
     ldr     r2, =#TIMER_BASE                @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                    @ bit-0 for ALARM0           
     ldr     r3, =#TIMER_INTE_OFFSET         @ loads the offset address for the TIMER raw interrupt enable register into r3
@@ -186,14 +185,16 @@ reset_timer:
 alarm_isr:
     push    {lr}                                                       @ push the link register, to save the return address
     @ reset the first button press boolean
+    ldr     r0, =2
+    bl      Gameflow
     ldr     r7, =1
+    ldr     r6, =-1
+    ldr     r5, =1
     @ clear the ALARM interrupt 
     ldr     r2, =#TIMER_BASE                                           @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                                               @ loads ALARM's bit-0 into r1
     ldr     r3, =#TIMER_INTR_OFFSET                                    @ loads the offset address for the TIMER raw interrupts register into r3
     str     r1, [r2, r3]                                               @ writes the appropriate bit value back to the TIMER's offset address interrupt reset register that is in r3 and the base address that is in r2
-    ldr     r0, =2
-    bl      Gameflow
     pop     {pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
 
 @ Set data alignment
