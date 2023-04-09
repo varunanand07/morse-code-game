@@ -21,7 +21,7 @@
 .equ ALARM_ISR_OFFSET, 0x40          @ ALARM0 is int #0 (vector table entry 16)
 .equ ALARM0, 0x1                     @ ALARM0, bit-0
 .equ GPIO, 0x2000                    @ GPIO, bit-13
-.equ ALARM_TIME, 2000000             @ Specify the 2 seconds alarm timeout
+.equ ALARM_TIME, 2500000             @ Specify the 2 seconds alarm timeout
 .equ CHAR_DOT, 0                     @ c function addToSequence parameter value for "dot"
 .equ CHAR_DASH, 1                    @ c function addToSequence parameter value for "dash"   
 .equ CHAR_SPACE, 2                   @ c function addToSequence parameter value for "space"
@@ -105,7 +105,7 @@ install_alarm_isr:
 @ GPIO interrupt service handler routine
 .thumb_func                                                            @ Required for all interrupt service routines
 gpio_isr:
-    push    {r0-r3, lr}                                                       @ push the link register, to save the return address
+    push    {lr}                                                       @ push the link register, to save the return address
     @ Button has been pressed
     ldr     r2, =(IO_BANK0_BASE + IO_BANK0_PROC0_INTS2_OFFSET)         @ loads the address for GPIO and the offset address for the GPIO interrupt status #2 register into r2
     ldr     r1, [r2]                                                   @ loads the value in address r2 into r1
@@ -163,12 +163,12 @@ end_gpio:
     ldr     r3, =#IO_BANK0_INTR2_OFFSET                                @ loads the offset address for the GPIO raw interrupts #2 register into r3
     add     r2, r3                                                     @ adds the base address in r2 and offset address in r3 and stores the result in r2
     str     r1, [r2]                                                   @ writes the specified bit value in r1 back to the address in r2
-    pop     {r0-r3, pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
+    pop     {pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
 
 reset_timer:
-    push    {r1-r4, lr}
+    push    {lr}
     @ Set alarm
-    ldr     r4, =ALARM_TIME                 @ load address of the global variable for the "gameTimer"
+    ldr     r4, =gameTimer                  @ load address of the global variable for the "gameTimer"
     ldr     r4, [r4]                        @ loads the value contained in the global variable into r4
     ldr     r2, =#TIMER_BASE                @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                    @ bit-0 for ALARM0           
@@ -179,12 +179,12 @@ reset_timer:
     add     r1, r4                          @ add the length of the alarm contained in r4 with the appropriate bit value of ALARM0 bit-0, which is in r1 and store the result in r1
     ldr     r3, =#TIMER_ALARM0_OFFSET       @ loads the offset address for the ALARM0 control register into r3
     str     r1, [r2, r3]                    @ write the value in r1 back to the base address that is in r2 and the offset address that is in r3
-    pop     {r1-r4, pc}
+    pop     {pc}
 
 @ ALARM interrupt service handler routine
 .thumb_func                                                            @ Required for all interrupt service routines
 alarm_isr:
-    push    {r0-r4, r7, lr}                                                       @ push the link register, to save the return address
+    push    {lr}                                                       @ push the link register, to save the return address
     @ reset the first button press boolean
     ldr     r7, =1
     @ clear the ALARM interrupt 
@@ -194,7 +194,7 @@ alarm_isr:
     str     r1, [r2, r3]                                               @ writes the appropriate bit value back to the TIMER's offset address interrupt reset register that is in r3 and the base address that is in r2
     ldr     r0, =2
     bl      Gameflow
-    pop     {r0-r4, r7, pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
+    pop     {pc}                                                       @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
 
 @ Set data alignment
 .align 4
