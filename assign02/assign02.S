@@ -9,9 +9,7 @@
 .global main_asm                                                @ Provide program starting address to the linker
 .align 4                                                        @ Specify code alignment
 
-.equ DFLT_STATE_STRT, 1                                         @ Specify the value to start flashing
-.equ DFLT_STATE_STOP, 0                                         @ Specify the value to stop flashing
-.equ DFLT_ALARM_TIME, 1000000                                   @ Specify the alarm time value 
+.equ ALARM_TIME, 1000000                                        @ Specify the 1 second alarm timeout
 .equ HALF_ALARM_TIME, 500000                                    @ Specify half the alarm time value
 .equ GPIO_BTN_FALL_MSK, 0x00400000                              @ Bit-22 for falling-edge event on GP21
 .equ GPIO_BTN_RISE_MSK, 0x00800000                              @ Bit-23 for rising-edge event on GP21
@@ -21,7 +19,6 @@
 .equ ALARM_ISR_OFFSET, 0x40                                     @ ALARM0 is int #0 (vector table entry 16)
 .equ ALARM0, 0x1                                                @ ALARM0, bit-0
 .equ GPIO, 0x2000                                               @ GPIO, bit-13
-.equ ALARM_TIME, 1000000                                        @ Specify the 1 second alarm timeout
 .equ CHAR_DOT, 0                                                @ c function addToSequence parameter value for "dot"
 .equ CHAR_DASH, 1                                               @ c function addToSequence parameter value for "dash"   
 .equ CHAR_SPACE, 2                                              @ c function addToSequence parameter value for "space"
@@ -115,7 +112,7 @@ gpio_isr:
 reset_timer:
     push    {lr}                                                @ push the link register, to save the return address
     ldr     r5, =gameTimer                                      @ loads the address of the global variable for the gameTimer into r5 
-    ldr     r6, =DFLT_ALARM_TIME                                @ loads the default gameTimer value into r6
+    ldr     r6, =ALARM_TIMER                                    @ loads the default gameTimer value into r6
     str     r6, [r5]                                            @ stores the default timer value in r6 into the address for the global variable for the timer, that is in r5
     pop     {pc} 
     @ Button has been released - we need to know how long it has been pressed for morse code & length between presses to know which morse code pattern to input
@@ -199,6 +196,5 @@ alarm_isr:
 .align 4
     .data
     halfTimer: .word HALF_ALARM_TIME                            @ Half the alarm time value, this is declared as a constant
-    timer: .word DFLT_ALARM_TIME                                @ Alarm time value, this is declared as a constant
     gameTimer: .word ALARM_TIME                                 @ Alarm time value for the game, this is declared as a constant
     time: .word 0                                               @ Variable that will contain the time calculated at varius points within the code
