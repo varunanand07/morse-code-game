@@ -21,7 +21,7 @@
 .equ ALARM_ISR_OFFSET, 0x40                                     @ ALARM0 is int #0 (vector table entry 16)
 .equ ALARM0, 0x1                                                @ ALARM0, bit-0
 .equ GPIO, 0x2000                                               @ GPIO, bit-13
-.equ ALARM_TIME, 1000000                                        @ Specify the 2 seconds alarm timeout
+.equ ALARM_TIME, 1000000                                        @ Specify the 1 second alarm timeout
 .equ CHAR_DOT, 0                                                @ c function addToSequence parameter value for "dot"
 .equ CHAR_DASH, 1                                               @ c function addToSequence parameter value for "dash"   
 .equ CHAR_SPACE, 2                                              @ c function addToSequence parameter value for "space"
