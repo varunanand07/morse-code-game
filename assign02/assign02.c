@@ -23,20 +23,44 @@ int sel = 2;
 int currentCharacter = 0;
 bool inputFinished = false;
 
-// Must declare the main assembly entry point before use.
+/**
+ * @brief Must declare the main assembly entry point before use.
+ * 
+ * @return
+ */
 void main_asm();
 
-// Initialise a GPIO pin – see SDK for detail on gpio_init()
+/**
+ * @brief Initialise a GPIO pin – see SDK for detail on gpio_init()
+ * 
+ * @param 
+ * 
+ * @return
+ */
 void asm_gpio_init(uint pin) {
     gpio_init(pin);
 }
 
-// Set direction of a GPIO pin – see SDK for detail on gpio_set_dir()
+/**
+ * @brief Set direction of a GPIO pin – see SDK for detail on gpio_set_dir()
+ * 
+ * @param 
+ * 
+ * @param
+ * 
+ * @return
+ */
 void asm_gpio_set_dir(uint pin, bool out) {
     gpio_set_dir(pin, out);
 }
 
-// Enable falling-edge & rising-edge interrupt – see SDK for detail on gpio_set_irq_enabled()
+/**
+ * @brief Enable falling-edge & rising-edge interrupt – see SDK for detail on gpio_set_irq_enabled()
+ * 
+ * @param 
+ * 
+ * @return
+ */
 void asm_gpio_set_irq(uint pin) {
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_FALL, true);
     gpio_set_irq_enabled(pin, GPIO_IRQ_EDGE_RISE, true);
@@ -61,8 +85,11 @@ static inline void put_pixel(uint32_t pixel_grb) {
  *        red, green and blue together in the right order.
  * 
  * @param r     The 8-bit intensity value for the red component
+ * 
  * @param g     The 8-bit intensity value for the green component
+ * 
  * @param b     The 8-bit intensity value for the blue component
+ * 
  * @return uint32_t Returns the resulting composit 32-bit RGB value
  */
 static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) {
@@ -78,6 +105,8 @@ static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) {
  *        using one of the RP2040 built-in PIO controllers.
  * 
  * @param rgbColour number indicating the colour we want to set the RGB LED to 
+ * 
+ * @return
  */
 void setRgbStatus(int rgbColour) {
     if(rgbColour == 4) // If game is not in progress set RGB LED to blue
@@ -95,18 +124,38 @@ void setRgbStatus(int rgbColour) {
     }
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void watchdog_update();
 
+/**
+ * @brief
+ * 
+ * @param
+ * 
+ * @return
+ */
 void watchdog_enable(uint32_t delay_ms, bool pause_on_debug);
 
-// Character array for the alphanumeric digits & letters
+/**
+ * @brief Character array for the alphanumeric digits & letters
+ * 
+ * @return
+ */
 char alphanumericCharacters[] = {
     // Alphanumeric letters A - Z
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     // Alphanumeric digits 0 - 9
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
-// Character array for the morse code digits & letters
+/**
+ * @brief Character array for the morse code digits & letters
+ * 
+ * @return
+ */
 char morseCodeCharacters[36][5] = { 
     // Morse code for the letters A - Z
     ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....",
@@ -117,6 +166,11 @@ char morseCodeCharacters[36][5] = {
     "-----", ".----", "..---", "...--", "....-", ".....",
     "-....", "--...", "---..", "----."};
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void welcome_message_banner() {
   printf("\n+--------------------------------------------------------+\n");
   printf("|              ASSIGNMENT #02      Group 11              |\n");
@@ -152,17 +206,34 @@ void welcome_message_banner() {
   printf("\nCHOOSE A LEVEL FROM THE ONES SHOWN ABOVE: ");
 }
 
+/**
+ * @brief
+ * 
+ * @param
+ * 
+ * @return
+ */
 void copyMorseCode(int morseIndex) {
     for (int index = 0; index < 5; index++)
         morseCopy[index] = morseCodeCharacters[morseIndex][index];
     morseCopy[6] = '\0';
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void resetMorseCodeArray() {
     for (int index = 0; index < 6; index++)
         morseCopy[index] = 0;
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void resetValues() {
     lives = 3;
     level = 0;
@@ -171,6 +242,11 @@ void resetValues() {
     //inputFinished = false;
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 bool playerWinsGame() {
     if (wins == 10) {
         printf("Woo hoo! You win!\n");
@@ -181,6 +257,11 @@ bool playerWinsGame() {
         return false;
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 bool playerLosesGame() {
     if (lives == 0) {
         printf("Game over... You lose...\n");
@@ -191,6 +272,11 @@ bool playerLosesGame() {
         return false;
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void addSymbolToAnswer() {
     // if player entered "."
     if(sel == 0) {
@@ -220,6 +306,13 @@ void addSymbolToAnswer() {
     }
 }
 
+/**
+ * @brief
+ * 
+ * @param
+ * 
+ * @return
+ */
 bool checkForWinOrLossInCurrentRound(int indexFromInput) {
     if (indexFromInput == currentCharacter)
         return true;
@@ -227,18 +320,33 @@ bool checkForWinOrLossInCurrentRound(int indexFromInput) {
         return false;
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void loseLife() {
     if (lives != 0)
         lives--;
     printf("You have %d lives left.", lives);
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void winLife() {
     if (lives != 3)
         lives++;
     printf("You have %d lives left.", lives);
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void resetAnswer() {
     for (int index = 0; index < 6; index++)
         input[index] = 0;
@@ -247,6 +355,11 @@ void resetAnswer() {
     //clear_buffer();
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void updateNumberOfWins() {
     wins++;
     if (wins == 5) {
@@ -256,6 +369,11 @@ void updateNumberOfWins() {
     }
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void handleWinInCurrentRound() {
     printf("Player entered the correct answer!\n");
     winLife();
@@ -264,6 +382,11 @@ void handleWinInCurrentRound() {
     setRgbStatus(lives);
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void handleLoseInCurrentRound() {
     if (input[5] != 1)
         printf("Player entered the wrong answer...\n");
@@ -274,6 +397,11 @@ void handleLoseInCurrentRound() {
     setRgbStatus(lives);
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 int initialLevelSelection() {
     if (strcmp(input, ".----") == 0) {
         watchdog_update();
@@ -295,6 +423,11 @@ int initialLevelSelection() {
     return 0;
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void printPlayerInput() {
     printf("Your input was: ");
     for(int index = 0; index < 5; index++) {
@@ -303,6 +436,11 @@ void printPlayerInput() {
     printf("\n");
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 int linkMorseToCorrespondingCharacter() {
     for(int index = 0; index < 37; index++) {
         copyMorseCode(index);
@@ -322,6 +460,11 @@ int linkMorseToCorrespondingCharacter() {
         return -1;
 }
 
+/**
+ * @brief
+ * 
+ * @return
+ */
 void level01() {
     watchdog_update();
     currentCharacter = rand() % 36; // gens random number in index to test
@@ -334,6 +477,11 @@ void level01() {
     j = 0;
 }
 
+/**
+ * @brief
+ *
+ * @return 
+*/
 void level02() {
     watchdog_update();
     currentCharacter = rand() % 36; // gens random number in index to test
@@ -341,6 +489,13 @@ void level02() {
     j = 0;
 }
 
+/**
+ * @brief
+ * 
+ * @param
+ * 
+ * @return
+ */
 void Gameflow(int symbol) {
     watchdog_enable(0x2328, 1);
     if (lives != 0) {
@@ -372,8 +527,10 @@ void Gameflow(int symbol) {
     }
 }
 
-/*
- * Main entry point for the code - simply calls the main assembly function.
+/**
+ * @brief Main entry point for the code - simply calls the main assembly function.
+ * 
+ * @return
  */
 int main() {
 
