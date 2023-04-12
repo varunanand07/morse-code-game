@@ -112,6 +112,12 @@ gpio_isr:
     ands    r1, r2                      
     cmp     r1, r2                                              @ checks if the GP21 button has been pressed
     beq     button_pressed                                      @ branch to the subroutine to check the flashing state for GP21
+reset_timer:
+    push    {lr}                                                @ push the link register, to save the return address
+    ldr     r5, =gameTimer                                      @ loads the address of the global variable for the gameTimer into r5 
+    ldr     r6, =DFLT_ALARM_TIME                                @ loads the default gameTimer value into r6
+    str     r6, [r5]                                            @ stores the default timer value in r6 into the address for the global variable for the timer, that is in r5
+    pop     {pc} 
     @ Button has been released - we need to know how long it has been pressed for morse code & length between presses to know which morse code pattern to input
     @ when the button was released & duration of press
 button_released:
@@ -150,6 +156,7 @@ input_dot:
     b       sequence_add                                        @ branch to code to add the character into the morse code sequence 
 sequence_add:
     bl      Gameflow                                            @ call c function to add the ASCII character in r0 to the morse code sequence
+    bl      reset_timer                                         @ branches to reset the gameTimer
     pop     {r0, r1, pc}                                        @ pop's r0, r1, to restore the values contained in them before the function call
     /*        INPUT TO MORSE CODE SEQUENCE - END         */ 
 end_gpio:
