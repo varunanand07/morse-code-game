@@ -22,6 +22,7 @@ int wins = 0;
 int sel = 2;
 int currentCharacter = 0;
 bool inputFinished = false;
+int currentCharacterLength = 0;
 
 /**
  * @brief Must declare the main assembly entry point before use.
@@ -239,6 +240,7 @@ void resetValues() {
     level = 0;
     wins = 0;
     currentCharacter = 0;
+    currentCharacterLength = 0;
     //inputFinished = false;
 }
 
@@ -299,7 +301,7 @@ void addSymbolToAnswer() {
         input[j] = '\0';
         inputFinished = true;
     }
-    if (j == 5) {
+    if (j == currentCharacterLength) {
         input[5] = '\0';
         printf("\n");
         inputFinished = true;   
@@ -328,7 +330,7 @@ bool checkForWinOrLossInCurrentRound(int indexFromInput) {
 void loseLife() {
     if (lives != 0)
         lives--;
-    printf("You have %d lives left.", lives);
+    printf("You have %d lives left.\n", lives);
 }
 
 /**
@@ -339,7 +341,7 @@ void loseLife() {
 void winLife() {
     if (lives != 3)
         lives++;
-    printf("You have %d lives left.", lives);
+    printf("You have %d lives left.\n", lives);
 }
 
 /**
@@ -430,10 +432,21 @@ int initialLevelSelection() {
  */
 void printPlayerInput() {
     printf("Your input was: ");
-    for(int index = 0; index < 5; index++) {
+    for(int index = 0; index < currentCharacterLength; index++) {
         printf("%c", input[index]);
     }
     printf("\n");
+}
+
+int numberOfCharacters(int morseIndex) {
+    bool outOfBounds = false;
+    int length = 0;
+    for (int index = 0; index < 5 && !outOfBounds; index++)
+        if (morseCodeCharacters[morseIndex][index] != '.' && morseCodeCharacters[morseIndex][index] != '-')
+            outOfBounds = true;
+        else
+            length++;
+    return length;
 }
 
 /**
@@ -444,19 +457,15 @@ void printPlayerInput() {
 int linkMorseToCorrespondingCharacter() {
     for(int index = 0; index < 37; index++) {
         copyMorseCode(index);
-        int length = 0;
-        if (strlen(morseCopy) > j)
-            length = strlen(morseCopy);
-        else
-            length = j;
-        if (strncmp(input, morseCopy, length) == 0) {
-                printf("This corresponds to \"%c\".\n", alphanumericCharacters[index]);
+        
+        if (strncmp(input, morseCopy, currentCharacterLength) == 0) {
+                printf("This corresponds to character \"%c\".\n", alphanumericCharacters[index]);
                 resetMorseCodeArray();
                return index;
             }
         resetMorseCodeArray();
         }
-        printf("This corresponds to \"?\".\n");
+        printf("This corresponds to character \"?\".\n");
         return -1;
 }
 
@@ -473,6 +482,7 @@ void level01() {
     for(int i = 0; i < 5; i++) {
         printf("%c", morseCodeCharacters[currentCharacter][i]);
     }
+    currentCharacterLength = numberOfCharacters(currentCharacter);
     printf("\n");
     j = 0;
 }
@@ -486,6 +496,7 @@ void level02() {
     watchdog_update();
     currentCharacter = rand() % 36; // gens random number in index to test
     printf("Enter the following character in Morse code: %c\n", alphanumericCharacters[currentCharacter]);
+    currentCharacterLength = numberOfCharacters(currentCharacter);
     j = 0;
 }
 
@@ -545,6 +556,7 @@ int main() {
     // Game is not in progress so set the RGB LED to blue - need to edit intensity
     setRgbStatus(rgbColour);
     sleep_ms(500);
+    welcome_message_banner();
 
     main_asm();
 

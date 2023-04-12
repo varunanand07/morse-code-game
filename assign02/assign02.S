@@ -3,6 +3,11 @@
 #include "hardware/regs/timer.h"
 #include "hardware/regs/m0plus.h"
 
+.syntax unified                      @ Specify unified assembly syntax
+.cpu    cortex-m0plus                @ Specify CPU type is Cortex M0+
+.thumb                               @ Specify thumb assembly for RP2040
+.global main_asm                     @ Provide program starting address to the linker
+.align 4                             @ Specify code alignment
 
 .equ DFLT_STATE_STRT, 1              @ Specify the value to start flashing
 .equ DFLT_STATE_STOP, 0              @ Specify the value to stop flashing
