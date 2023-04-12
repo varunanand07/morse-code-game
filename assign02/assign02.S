@@ -150,7 +150,6 @@ input_dot:
     b       sequence_add                                        @ branch to code to add the character into the morse code sequence 
 sequence_add:
     bl      Gameflow                                            @ call c function to add the ASCII character in r0 to the morse code sequence
-    bl      reset_timer                                         @ branch to the subroutine to reset the timer
     pop     {r0, r1, pc}                                        @ pop's r0, r1, to restore the values contained in them before the function call
     /*        INPUT TO MORSE CODE SEQUENCE - END         */ 
 end_gpio:
@@ -160,26 +159,11 @@ end_gpio:
     add     r2, r3                                              @ adds the base address in r2 and offset address in r3 and stores the result in r2
     str     r1, [r2]                                            @ writes the specified bit value in r1 back to the address in r2
     pop     {pc}                                                @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
-reset_timer:
-    push    {lr}                                                @ push the link, register, to save the return address
-    @ Set alarm
-    ldr     r4, =gameTimer                                      @ load address of the global variable for the "gameTimer"
-    ldr     r2, =#TIMER_BASE                                    @ loads the base address for the timer component into r2
-    ldr     r1, =#ALARM0                                        @ bit-0 for ALARM0           
-    ldr     r3, =#TIMER_INTE_OFFSET                             @ loads the offset address for the TIMER raw interrupt enable register into r3
-    str     r1, [r2, r3]                                        @ writes the appropriate bit value back to the TIMER's offset address interrupt enable register that is in r3 and the base address that is in r2
-    ldr     r3, =#TIMER_TIMELR_OFFSET                           @ loads the offset address for the lower 32-bits of the timer register into r3
-    ldr     r1, [r2, r3]                                        @ loads the address of r3 and r2 into r1
-    add     r1, r4                                              @ add the length of the alarm contained in r4 with the appropriate bit value of ALARM0 bit-0, which is in r1 and store the result in r1
-    ldr     r3, =#TIMER_ALARM0_OFFSET                           @ loads the offset address for the ALARM0 control register into r3
-    str     r1, [r2, r3]                                        @ write the value in r1 back to the base address that is in r2 and the offset address that is in r3
-    pop     {pc}                                                @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
 
 @ ALARM interrupt service handler routine
 .thumb_func                                                     @ Required for all interrupt service routines
 alarm_isr:
     push    {lr}                                                @ push the link register, to save the return address
-    @ reset the first button press boolea
     ldr     r0, =2  	                                        @ sets the timer to 2 seconds 
     bl      Gameflow                                            @ calls c function for the game flow checks deals with input not being entered during time restraint
     @ clear the ALARM interrupt
@@ -187,7 +171,21 @@ alarm_isr:
     ldr     r1, =#ALARM0                                        @ loads ALARM's bit-0 into r1
     ldr     r3, =#TIMER_INTR_OFFSET                             @ loads the offset address for the TIMER raw interrupts register into r3
     str     r1, [r2, r3]                                        @ writes the appropriate bit value back to the TIMER's offset address interrupt reset register that is in r3 and the base address that is in r2
-    bl      reset_timer                                         @ branch to subroutine to reset the timer
+    @ enable the ALARM interrupt
+    ldr     r2, =#TIMER_BASE                                    @ loads the base address for the timer component into r2
+    ldr     r1, =#ALARM0                                        @ loads ALARM's bit-0 into r1
+    ldr     r3, =#TIMER_INTE_OFFSET                             @ loads the offset address for the TIMER raw interrupt enable register into r3
+    str     r1, [r2, r3]                                        @ writes the appropriate bit value back to the TIMER's offset address interrupt enable register that is in r3 and the base address that is in r2
+    @ set the next ALARM interrupt
+    ldr     r4, =gameTimer                                      @ load address of the global variable for the "gameTimer"
+    ldr     r4, [r4]                                            @ loads game timer value stored at the address of gameTimer
+    ldr     r2, =#TIMER_BASE                                    @ loads the base address for the timer component into r2
+    ldr     r1, =#ALARM0                                        @ bit-0 for ALARM0 into r1       
+    ldr     r3, =#TIMER_TIMELR_OFFSET                           @ loads the offset address for the lower 32-bits of the timer register into r3
+    ldr     r1, [r2, r3]                                        @ loads the address of r3 and r2 into r1
+    add     r1, r4                                              @ add the length of the alarm contained in r4 with the appropriate bit value of ALARM0 bit-0, which is in r1 and store the result in r1
+    ldr     r3, =#TIMER_ALARM0_OFFSET                           @ loads the offset address for the ALARM0 control register into r3
+    str     r1, [r2, r3]                                        @ write the value in r1 back to the base address that is in r2 and the offset address that is in r3
     pop     {pc}                                                @ pop's the saved information, so that it can return to the next instruction immediately after the calling point
 
 @ Set data alignment
