@@ -28,8 +28,6 @@
 
 @ Entry point to the ASM portion of the program
 main_asm:
-    ldr     r7, =1                                              @ boolean set true for first press
-    ldr     r5, =0                                              @ Default value for time between presses
     bl      init_gpio_btn_gp21                                  @ Initialise GP21 push-button
     bl      install_gpio_isr                                    @ Install the GPIO interrupt service routine
     bl      install_alarm_isr                                   @ Install the ALARM interrupt service routine
@@ -184,9 +182,6 @@ alarm_isr:
     @ reset the first button press boolea
     ldr     r0, =2  	                                        @ sets the timer to 2 seconds 
     bl      Gameflow                                            @ calls c function for the game flow checks deals with input not being entered during time restraint
-    ldr     r7, = 1
-    ldr     r6, =-1
-    ldr     r5, = 1
     @ clear the ALARM interrupt
     ldr     r2, =#TIMER_BASE                                    @ loads the base address for the timer component into r2
     ldr     r1, =#ALARM0                                        @ loads ALARM's bit-0 into r1
