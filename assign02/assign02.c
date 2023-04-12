@@ -43,28 +43,6 @@ void asm_gpio_set_irq(uint pin) {
 }
 
 /**
- * @brief Wrapper to allow the assembly code to call the gpio_put()
- *        SDK function.
- * 
- * @param pin       The GPIO pin number to write to.
- * @param value     Specify the value that the pin should be set to (0/1).
- */
-void asm_gpio_put(int pin, int value) {
-    gpio_put(pin, value);
-}
-
-/**
- * @brief Wrapper to allow the assembly code to call the gpio_get()
- *        SDK function.
- * 
- * @param pin       The GPIO pin number to read from.
- * @return int      Returns the current value of the GPIO pin.
- */
-int asm_gpio_get(int pin) {
-    return gpio_get(pin);
-}
-
-/**
  * @brief Wrapper function used to call the underlying PIO
  *        function that pushes the 32-bit RGB colour value
  *        out to the LED serially using the PIO0 block. The
