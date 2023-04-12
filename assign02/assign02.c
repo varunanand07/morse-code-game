@@ -54,6 +54,17 @@ void asm_gpio_put(int pin, int value) {
 }
 
 /**
+ * @brief Wrapper to allow the assembly code to call the gpio_get()
+ *        SDK function.
+ * 
+ * @param pin       The GPIO pin number to read from.
+ * @return int      Returns the current value of the GPIO pin.
+ */
+int asm_gpio_get(int pin) {
+    return gpio_get(pin);
+}
+
+/**
  * @brief Wrapper function used to call the underlying PIO
  *        function that pushes the 32-bit RGB colour value
  *        out to the LED serially using the PIO0 block. The
@@ -404,4 +415,3 @@ int main() {
 
     return(0);
 }
-
