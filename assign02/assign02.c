@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
@@ -12,12 +13,15 @@
 #define WS2812_PIN 28       // The GPIO pin that the WS2812 connected to
 
 int rgbColour = 4; // colour for RGB LED
-char buffer[5];
+char input[6];
+char morseCopy[6];
 int j = 0;
 int level = 0;
 int lives = 3;
 int wins = 0;
 int sel = 2;
+int currentCharacter = 0;
+bool inputFinished = false;
 
 // Must declare the main assembly entry point before use.
 void main_asm();
@@ -85,7 +89,7 @@ void setRgbStatus(int rgbColour) {
         else if(rgbColour == 2)
             put_pixel(urgb_u32(0xFF, 0xFF, 0x00)); // If game has started and player has 2 lives set the RGB LED to yellow
         else if(rgbColour == 1)
-            put_pixel(urgb_u32(0xFF, 0xD3, 0x00)); // If game has started and player has 1 lives set the RGB LED to orange
+            put_pixel(urgb_u32(0xFF, 0xA5, 0x00)); // If game has started and player has 1 lives set the RGB LED to orange
         else if(rgbColour == 0)
             put_pixel(urgb_u32(0x7F, 0x00, 0x00)); // If game has started and player has 0 lives set the RGB LED to red, this means it is game over
     }
@@ -148,10 +152,23 @@ void welcome_message_banner() {
   printf("\nCHOOSE A LEVEL FROM THE ONES SHOWN ABOVE: ");
 }
 
+void copyMorseCode(int morseIndex) {
+    for (int index = 0; index < 5; index++)
+        morseCopy[index] = morseCodeCharacters[morseIndex][index];
+    morseCopy[6] = '\0';
+}
+
+void resetMorseCodeArray() {
+    for (int index = 0; index < 6; index++)
+        morseCopy[index] = 0;
+}
+
 void resetValues() {
     lives = 3;
     level = 0;
     wins = 0;
+    currentCharacter = 0;
+    //inputFinished = false;
 }
 
 bool playerWinsGame() {
@@ -178,30 +195,36 @@ void addSymbolToAnswer() {
     // if player entered "."
     if(sel == 0) {
         printf(".");
-        buffer[j++] = '.';
+        input[j++] = '.';
         watchdog_update();
         sel = 2;
     }
     // if player entered "-"
     else if(sel == 1) {
         printf("-");
-        buffer[j++] = '-';
+        input[j++] = '-';
         watchdog_update();
         sel = 2;
     }
     // if no input was given during an active game (not during the level decision)
     else if(level != 0 && sel == 2) {
-        printf(" ");
-        buffer[5] = 1;
-    }         
+        printf(" \n");
+        input[5] = 1;
+        input[j] = '\0';
+        inputFinished = true;
+    }
+    if (j == 5) {
+        input[5] = '\0';
+        printf("\n");
+        inputFinished = true;   
+    }
 }
 
-bool checkForWinOrLossInCurrentRound() {
-    for (int row = 0; row < 37; row++) {
-        if (strcmp(buffer, morseCodeCharacters[row]) == 0)
-            return true;
-    }
-    return false;
+bool checkForWinOrLossInCurrentRound(int indexFromInput) {
+    if (indexFromInput == currentCharacter)
+        return true;
+    else
+        return false;
 }
 
 void loseLife() {
@@ -218,8 +241,9 @@ void winLife() {
 
 void resetAnswer() {
     for (int index = 0; index < 6; index++)
-        buffer[index] = 0;
+        input[index] = 0;
     j = 0;
+    inputFinished = false;
     //clear_buffer();
 }
 
@@ -241,7 +265,7 @@ void handleWinInCurrentRound() {
 }
 
 void handleLoseInCurrentRound() {
-    if (buffer[0] != 0)
+    if (input[5] != 1)
         printf("Player entered the wrong answer...\n");
     else
         printf("Player didn't enter an answer...\n");
@@ -251,18 +275,21 @@ void handleLoseInCurrentRound() {
 }
 
 int initialLevelSelection() {
-    if (strcmp(buffer, ".----") == 0) {
+    if (strcmp(input, ".----") == 0) {
         watchdog_update();
         printf("You chose level 01.\n");
         setRgbStatus(lives);
+        resetAnswer();
         //clear_buffer();
         return 1;
     }
-    if (strcmp(buffer, "..---") == 0) {
+    if (strcmp(input, "..---") == 0) {
         watchdog_update();
         printf("You chose level 02.\n");
         //clear_buffer();
+        wins = 5;
         setRgbStatus(lives);
+        resetAnswer();
         return 2;
     }
     return 0;
@@ -271,25 +298,33 @@ int initialLevelSelection() {
 void printPlayerInput() {
     printf("Your input was: ");
     for(int index = 0; index < 5; index++) {
-        printf("%c", buffer[index]);
+        printf("%c", input[index]);
     }
     printf("\n");
 }
 
-
-void linkMorseToCorrespondingCharacter() {
+int linkMorseToCorrespondingCharacter() {
     for(int index = 0; index < 37; index++) {
-        if (strcmp(buffer, morseCodeCharacters[index]) == 0) {
+        copyMorseCode(index);
+        int length = 0;
+        if (strlen(morseCopy) > j)
+            length = strlen(morseCopy);
+        else
+            length = j;
+        if (strncmp(input, morseCopy, length) == 0) {
                 printf("This corresponds to \"%c\".\n", alphanumericCharacters[index]);
-                return;
+                resetMorseCodeArray();
+               return index;
             }
+        resetMorseCodeArray();
         }
         printf("This corresponds to \"?\".\n");
+        return -1;
 }
 
 void level01() {
     watchdog_update();
-    int currentCharacter = rand() % 36; // gens random number in index to test
+    currentCharacter = rand() % 36; // gens random number in index to test
     printf("Enter the following character in Morse code: %c\n", alphanumericCharacters[currentCharacter]);
     printf("Morse code for character \"%c\": ", alphanumericCharacters[currentCharacter]);
     for(int i = 0; i < 5; i++) {
@@ -301,31 +336,39 @@ void level01() {
 
 void level02() {
     watchdog_update();
-    int currentCharacter = rand() % 36; // gens random number in index to test
+    currentCharacter = rand() % 36; // gens random number in index to test
     printf("Enter the following character in Morse code: %c\n", alphanumericCharacters[currentCharacter]);
     j = 0;
 }
 
 void Gameflow(int symbol) {
+    watchdog_enable(0x2328, 1);
     if (lives != 0) {
         sel = symbol;
         addSymbolToAnswer();
-        if (level != 0) {
-            printPlayerInput();
-            linkMorseToCorrespondingCharacter();
-            if (checkForWinOrLossInCurrentRound())
-                handleWinInCurrentRound();
-            else
-                handleLoseInCurrentRound();
-            if (!playerWinsGame() && !playerLosesGame()) {
-                if (level == 1)
+        if (level == 0) {
+            level = initialLevelSelection();
+            if (level == 1)
                     level01();
-                else
+            else if (level == 2)
                     level02();
+        }
+        else {
+            if (inputFinished) {
+                printPlayerInput();
+                int indexFromInput = linkMorseToCorrespondingCharacter();
+                if (checkForWinOrLossInCurrentRound(indexFromInput))
+                    handleWinInCurrentRound();
+                else
+                    handleLoseInCurrentRound();
+                if (!playerWinsGame() && !playerLosesGame()) {
+                    if (level == 1)
+                        level01();
+                    else
+                        level02();
+                }
             }
         }
-        else
-            level = initialLevelSelection();
     }
 }
 
