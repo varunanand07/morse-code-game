@@ -312,7 +312,7 @@ void addSymbolToAnswer() {
         printf("\n");
         inputFinished = true;   
     }
-    if (j == 5 && level == 0) {
+    if (j == 5 && level == 0 && input[0] != '\0') {
         input[5] = '\0';
         printf("\n");
         inputFinished = true;
