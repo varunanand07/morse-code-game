@@ -9,7 +9,6 @@
 #include "hardware/regs/pads_bank0.h"
 #include "hardware/regs/m0plus.h"
 
-
     .equ DFLT_STATE_STRT, 1 @ Specify the value to start flashing
     .equ DFLT_STATE_STOP, 0 @ Specify the value to stop flashing
     .equ DFLT_ALARM_TIME, 1000000 @ Specify the default alarm timeout
